@@ -1,4 +1,4 @@
-# Лабораторная работа №05
+# Лабораторная работа №07
 
 Студент: Щелоков Александр ИУ8-25
 
@@ -7,120 +7,111 @@ GitHub: shchelokov12
 Gmail: aesch8877@gmail.com
 
 ## Ход работы
-### 1. Подготовка репозитория
+### 1. Подготовка окружения и клонирование
 ```
 export GITHUB_USERNAME=shchelokov12
-```
-Клонируем предыдущую работу как основу для lab05
-```
-git clone https://github.com/${GITHUB_USERNAME}/lab04 projects/lab05
-cd projects/lab05
+alias gsed=sed
+
+cd ${GITHUB_USERNAME}/workspace
+pushd .
+source scripts/activate
+
+git clone https://github.com{GITHUB_USERNAME}/lab06 projects/lab07
+cd projects/lab07
 git remote remove origin
-git remote add origin https://github.com/${GITHUB_USERNAME}/lab05
+git remote add origin https://github.com{GITHUB_USERNAME}/lab07
 ```
 
-### 2. Добавление GTest как submodule
+### 2. Скачивание специального CMake-модуля `HunterGate.cmake`, который отвечает за автоматическую инициализацию Hunter
 ```
-mkdir third-party
-git submodule add https://github.com/google/googletest third-party/gtest
-cd third-party/gtest && git checkout release-1.8.1 && cd ../..
-git add third-party/gtest
-git commit -m "added gtest framework"
+mkdir -p cmake
+wget https://githubusercontent.com -O cmake/HunterGate.cmake
+git rm -rf third-party/gtest
 ```
 
-### 3. Модификация CMakeLists.txt (добавление тестов)
-Добавляем BUILD_TESTS
+Финальная рабочая конфигурация `CMakeLists.txt`:
 ```
-sed -i '/option(BUILD_EXAMPLES "Build examples" OFF)/a\option(BUILD_TESTS "Build tests" OFF)' CMakeLists.txt
-```
-Добавляем тестирование в конец файла
-```
-cat >> CMakeLists.txt << EOF
-
+cmake_minimum_required(VERSION 3.10)
+include("cmake/HunterGate.cmake")
+HunterGate(
+    URL "https://github.com"
+    SHA1 "5659b15dc0884d4b03dbd95710e6a1fa0fc3258d"
+)
+project(print)
+set(PRINT_VERSION_MAJOR 0)
+set(PRINT_VERSION_MINOR 1)
+set(PRINT_VERSION_PATCH 0)
+set(PRINT_VERSION "${PRINT_VERSION_MAJOR}.${PRINT_VERSION_MINOR}.${PRINT_VERSION_PATCH}")
+set(PRINT_VERSION_STRING "v${PRINT_VERSION}")
+hunter_add_package(GTest)
+find_package(GTest REQUIRED)
+add_library(print STATIC sources/print.cpp)
+target_include_directories(print PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+option(BUILD_TESTS "Build tests" OFF)
 if(BUILD_TESTS)
   enable_testing()
-  add_subdirectory(third-party/gtest)
-  file(GLOB \${PROJECT_NAME}_TEST_SOURCES tests/*.cpp)
-  add_executable(check \${${PROJECT_NAME}_TEST_SOURCES})
-  target_link_libraries(check \${PROJECT_NAME} gtest_main)
-  add_test(NAME check COMMAND check)
+  add_executable(test1 test.cpp)
+  target_link_libraries(test1 print GTest::gtest_main)
+  add_test(NAME test1 COMMAND test1)
 endif()
-EOF
 ```
 
-### 4. Создание тестов
+### 3. Сборка с тестами
 ```
-mkdir tests
-cat > tests/test1.cpp << EOF
-#include <print.hpp>
-#include <gtest/gtest.h>
-
-TEST(Print, InFileStream)
-{
-  std::string filepath = "file.txt";
-  std::string text = "hello";
-  std::ofstream out{filepath};
-  print(text, out);
-  out.close();
-  std::string result;
-  std::ifstream in{filepath};
-  in >> result;
-  EXPECT_EQ(result, text);
-}
-EOF
+cmake -H. -B_builds -DBUILD_TESTS=ON
+cmake --build _builds
+cmake --build _builds --target test
 ```
 
-### 5. Локальная сборка и запуск тестов
+### 4. Локальная копия Hunter
 ```
-cmake -H. -B_build -DBUILD_TESTS=ON
-cmake --build _build
-cmake --build _build --target test
-_build/check
-```
-
-### 6. Создание файла для GitHub Actions
-```
-mkdir -p .github/workflows
-cat > .github/workflows/ci.yml << 'EOF'
-name: C++ CI with GTest
-
-on:
-  push:
-    branches: [ master, main ]
-  pull_request:
-    branches: [ master, main ]
-
-jobs:
-  build-and-test:
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: true 
-
-    - name: Configure CMake
-      run: cmake -H. -B_build -DBUILD_TESTS=ON
-
-    - name: Build
-      run: cmake --build _build
-
-    - name: Run tests (ctest)
-      run: cmake --build _build --target test -- ARGS=--verbose
-
-    - name: Also run check binary directly
-      run: _build/check
-EOF
+git clone https://github.com/cpp-pm/hunter $HOME/projects/hunter
+export HUNTER_ROOT=$HOME/projects/hunter
+rm -rf _builds
+cmake -H. -B_builds -DBUILD_TESTS=ON
+cmake --build _builds
+cmake --build _builds --target test
 ```
 
-### 7. Отправка изменений на GITHUB
+### 5. Настройка конкретной версии GTest
+Создан файл `cmake/Hunter/config.cmake`:
 ```
-git add .github/workflows/ci.yml
-git add tests
-git add -p
-git commit -m "added tests with GitHub Actions"
-git push origin main
+hunter_config(GTest VERSION 1.7.0~hunter-9)
+```
+В `HunterGate` добавлен параметр `LOCAL`
+
+### 6.  Создание демонстрационного приложения `demo`
+Файл `demo/main.cpp` – читает строки из stdin и записывает их в файл, указанный в `LOG_PATH`.
+В CMakeLists.txt добавлено:
+```
+add_executable(demo ${CMAKE_CURRENT_SOURCE_DIR}/demo/main.cpp)
+target_link_libraries(demo print)
+install(TARGETS demo RUNTIME DESTINATION bin)
+```
+
+### 7. Использование polly для кроссплатформенной сборки
+```
+mkdir tools
+git submodule add https://github.com/ruslo/polly tools/polly
+tools/polly/bin/polly.py --test
+tools/polly/bin/polly.py --install
+tools/polly/bin/polly.py --toolchain clang-cxx14
+```
+
+### 8. Формирование отчета
+```
+popd
+export LAB_NUMBER=07
+git clone https://github.com/tp-labs/lab${LAB_NUMBER} tasks/lab${LAB_NUMBER}
+mkdir reports/lab${LAB_NUMBER}
+cp tasks/lab${LAB_NUMBER}/README.md reports/lab${LAB_NUMBER}/REPORT.md
+cd reports/lab${LAB_NUMBER}
+edit REPORT.md
+gist REPORT.md
 ```
 
 ## Вывод
-В ходе выполнения лабораторной работы я добавил в проект фреймворк Google Test, написал модульные тесты и настроил их автоматический запуск через GitHub Actions при каждом push в репозиторий.
+В ходе лабораторной работы изучены современные подходы к управлению C++ зависимостями (Hunter), настройка CMake для тестирования и кроссплатформенная сборка с помощью polly.

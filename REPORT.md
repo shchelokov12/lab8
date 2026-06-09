@@ -1,4 +1,4 @@
-# Лабораторная работа №07
+# Лабораторная работа №08
 
 Студент: Щелоков Александр ИУ8-25
 
@@ -7,111 +7,117 @@ GitHub: shchelokov12
 Gmail: aesch8877@gmail.com
 
 ## Ход работы
-### 1. Подготовка окружения и клонирование
+### 1. Подготовка репозитория
 ```
 export GITHUB_USERNAME=shchelokov12
-alias gsed=sed
 
 cd ${GITHUB_USERNAME}/workspace
 pushd .
 source scripts/activate
 
-git clone https://github.com{GITHUB_USERNAME}/lab06 projects/lab07
-cd projects/lab07
+git clone https://github.com/${GITHUB_USERNAME}/lab07_lab08
+cd lab08
+git submodule update --init
 git remote remove origin
-git remote add origin https://github.com{GITHUB_USERNAME}/lab07
+git remote add origin https://github.com/${GITHUB_USERNAME}/lab08
 ```
 
-### 2. Скачивание специального CMake-модуля `HunterGate.cmake`, который отвечает за автоматическую инициализацию Hunter
+### 2. Создание Dockerfile
+Dockerfile создавался поэтапно: базовый образ, установка компиляторов и CMake, копирование исходного кода, сборка проекта, переменная окружения для логов, том для хранения логов, Рабочая директория и точка входа:
 ```
-mkdir -p cmake
-wget https://githubusercontent.com -O cmake/HunterGate.cmake
-git rm -rf third-party/gtest
-```
-
-Финальная рабочая конфигурация `CMakeLists.txt`:
-```
-cmake_minimum_required(VERSION 3.10)
-include("cmake/HunterGate.cmake")
-HunterGate(
-    URL "https://github.com"
-    SHA1 "5659b15dc0884d4b03dbd95710e6a1fa0fc3258d"
-)
-project(print)
-set(PRINT_VERSION_MAJOR 0)
-set(PRINT_VERSION_MINOR 1)
-set(PRINT_VERSION_PATCH 0)
-set(PRINT_VERSION "${PRINT_VERSION_MAJOR}.${PRINT_VERSION_MINOR}.${PRINT_VERSION_PATCH}")
-set(PRINT_VERSION_STRING "v${PRINT_VERSION}")
-hunter_add_package(GTest)
-find_package(GTest REQUIRED)
-add_library(print STATIC sources/print.cpp)
-target_include_directories(print PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>
-)
-option(BUILD_TESTS "Build tests" OFF)
-if(BUILD_TESTS)
-  enable_testing()
-  add_executable(test1 test.cpp)
-  target_link_libraries(test1 print GTest::gtest_main)
-  add_test(NAME test1 COMMAND test1)
-endif()
+FROM ubuntu:18.04
+RUN apt update
+RUN apt install -yy gcc g++ cmake
+COPY . print/
+WORKDIR print
+RUN cmake -H. -B_build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=_install
+RUN cmake --build _build
+RUN cmake --build _build --target install
+ENV LOG_PATH /home/logs/log.txt
+VOLUME /home/logs
+WORKDIR _install/bin
+ENTRYPOINT ./demo
 ```
 
-### 3. Сборка с тестами
+### 3. Сборка образа
 ```
-cmake -H. -B_builds -DBUILD_TESTS=ON
-cmake --build _builds
-cmake --build _builds --target test
-```
-
-### 4. Локальная копия Hunter
-```
-git clone https://github.com/cpp-pm/hunter $HOME/projects/hunter
-export HUNTER_ROOT=$HOME/projects/hunter
-rm -rf _builds
-cmake -H. -B_builds -DBUILD_TESTS=ON
-cmake --build _builds
-cmake --build _builds --target test
+docker build -t logger .
+docker images
 ```
 
-### 5. Настройка конкретной версии GTest
-Создан файл `cmake/Hunter/config.cmake`:
+### 4. Запуск контейнера
 ```
-hunter_config(GTest VERSION 1.7.0~hunter-9)
+mkdir logs
+docker run -it -v "$(pwd)/logs/:/home/logs/" logger
 ```
-В `HunterGate` добавлен параметр `LOCAL`
-
-### 6.  Создание демонстрационного приложения `demo`
-Файл `demo/main.cpp` – читает строки из stdin и записывает их в файл, указанный в `LOG_PATH`.
-В CMakeLists.txt добавлено:
+Ввод данных:
 ```
-add_executable(demo ${CMAKE_CURRENT_SOURCE_DIR}/demo/main.cpp)
-target_link_libraries(demo print)
-install(TARGETS demo RUNTIME DESTINATION bin)
+text1
+text2
+text3
+<Ctrl-D>
 ```
-
-### 7. Использование polly для кроссплатформенной сборки
+Проверка результата:
 ```
-mkdir tools
-git submodule add https://github.com/ruslo/polly tools/polly
-tools/polly/bin/polly.py --test
-tools/polly/bin/polly.py --install
-tools/polly/bin/polly.py --toolchain clang-cxx14
+docker inspect logger
+cat logs/log.txt
 ```
 
-### 8. Формирование отчета
+### 5. Настройка GitHub Actions
+Изменение ссылок в README.md:
+`sed -i 's/lab07/lab08/g' README.md`
+
+Создание директории для workflow: 
+`mkdir -p .github/workflows`
+
+Создание файла `.github/workflows/docker-build.yml`:
+
+```
+name: Docker Build
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Build Docker image
+      run: docker build -t logger .
+    
+    - name: Test Docker container
+      run: |
+        mkdir logs
+        echo -e "test1\ntest2\ntest3" | docker run -i -v "$(pwd)/logs/:/home/logs/" logger
+        cat logs/log.txt
+```
+
+Добавление файлов в Git и push:
+```
+git add Dockerfile .github/workflows/docker-build.yml
+git commit -m "add Dockerfile and GitHub Actions workflow"
+git push origin master
+```
+
+
+### 6. Подготовка отчета:
 ```
 popd
-export LAB_NUMBER=07
+export LAB_NUMBER=08
 git clone https://github.com/tp-labs/lab${LAB_NUMBER} tasks/lab${LAB_NUMBER}
 mkdir reports/lab${LAB_NUMBER}
 cp tasks/lab${LAB_NUMBER}/README.md reports/lab${LAB_NUMBER}/REPORT.md
 cd reports/lab${LAB_NUMBER}
-edit REPORT.md
+edit REPORT.md   # замена содержимого на данный отчёт
 gist REPORT.md
 ```
 
 ## Вывод
-В ходе лабораторной работы изучены современные подходы к управлению C++ зависимостями (Hunter), настройка CMake для тестирования и кроссплатформенная сборка с помощью polly.
+В ходе работы освоены базовые команды Docker: написание Dockerfile, сборка образов, запуск контейнеров с пробросом томов, просмотр информации об образе. Также приобретены навыки интеграции Docker с CI-системой на примере GitHub Actions — современного встроенного инструмента автоматизации GitHub.

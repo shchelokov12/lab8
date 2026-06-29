@@ -39,16 +39,16 @@ jobs:
         cmake -H. -B_builds -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCPACK_GENERATOR="${{ matrix.pack_generator }}"
 
     - name: Build and Pack
-      run: cmake --build _build --target package
+      run: cmake --build _builds --target package
 
     - name: Prepare Artifacts
       run: |
         mkdir artifacts
         # Переносим все сгенерированные пакеты (.deb, .rpm, .dmg) в папку artifacts
-        mv _build/*.deb artifacts/ 2>/dev/null || true
-        mv _build/*.rpm artifacts/ 2>/dev/null || true
-        mv _build/*.dmg artifacts/ 2>/dev/null || true
-        mv _build/*.tar.gz artifacts/ 2>/dev/null || true
+        mv _builds/*.deb artifacts/ 2>/dev/null || true
+        mv _builds/*.rpm artifacts/ 2>/dev/null || true
+        mv _builds/*.dmg artifacts/ 2>/dev/null || true
+        mv _builds/*.tar.gz artifacts/ 2>/dev/null || true
 
     # Скрипт автоматически объединит файлы с обеих ОС и прикрепит их к одному релизу
     - name: Upload Artifacts to GitHub Release

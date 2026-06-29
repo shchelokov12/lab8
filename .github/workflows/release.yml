@@ -34,9 +34,9 @@ jobs:
         sudo apt-get install -y rpm
 
     - name: Configure CMake
-        run: |
-          rm -rf _builds
-          cmake -H. -B_builds -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCPACK_GENERATOR="${{ matrix.pack_generator }}"
+      run: |
+        rm -rf _builds
+        cmake -H. -B_builds -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCPACK_GENERATOR="${{ matrix.pack_generator }}"
 
     - name: Build and Pack
       run: cmake --build _build --target package

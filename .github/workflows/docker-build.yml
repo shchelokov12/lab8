@@ -1,0 +1,29 @@
+name: Docker Build
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    
+    - name: Build Docker image
+      run: docker build -t logger .
+    
+    - name: Test Docker image
+      run: |
+        mkdir -p logs
+        echo -e "test1\ntest2\ntest3\n" | docker run -it -v "/home/parallels/shchelokov12/workspace/lab8/logs/:/home/logs/" logger
+        cat logs/log.txt
+    
+    - name: Inspect image
+      run: docker inspect logger

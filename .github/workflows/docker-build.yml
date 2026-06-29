@@ -17,17 +17,13 @@ jobs:
     - name: Build Docker image
       run: docker build -t logger .
     
-    - name: Test Docker container
+    - name: Test and save logs
       run: |
-        # Создаем тестовые данные и запускаем контейнер
-        echo -e "test1\ntest2\ntest3\n" | docker run -i logger
-    
-    - name: Create log file from container
-      run: |
-        # Копируем лог из контейнера
-        docker run --rm logger cat /logs/log.txt > log.txt
+        echo -e "test1\ntest2\ntest3\n" | docker run -i logger > output.txt
+        
         mkdir -p logs
-        cp log.txt logs/
+        cp output.txt logs/log.txt
+        
         echo "=== Log content ==="
         cat logs/log.txt
     

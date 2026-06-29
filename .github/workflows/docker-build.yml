@@ -22,24 +22,21 @@ jobs:
     - name: Test Docker image
       run: |
         mkdir -p logs
-        # Создаем тестовые данные
-        printf "test1\ntest2\ntest3\n" > input.txt
-        # Запускаем контейнер с явной передачей переменной окружения
-        docker run           -e LOG_PATH=/home/logs/log.txt           -v "/home/parallels/shchelokov12/workspace/lab8/logs/:/home/logs/"           logger < input.txt
-        # Проверяем, создался ли файл
+        printf "test1\ntest2\ntest3\n" | docker run \
+          -e LOG_PATH=/home/logs/log.txt \
+          -v "$(pwd)/logs/:/home/logs/" \
+          logger
+        
+        echo "=== Checking logs directory ==="
         ls -la logs/
+        
+        echo "=== Log file content ==="
         if [ -f logs/log.txt ]; then
-          echo "=== Log file content ==="
           cat logs/log.txt
         else
-          echo "Log file not found, checking container filesystem"
-          docker run --rm logger ls -la /home/logs/ || true
-          docker run --rm logger find / -name "log.txt" 2>/dev/null || true
+          echo "ERROR: log.txt not found!"
           exit 1
         fi
-    
-    - name: Inspect image
-      run: docker inspect logger | grep -A 5 "Env"
     
     - name: Upload logs as artifact
       if: always()

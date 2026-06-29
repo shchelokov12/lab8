@@ -1,1 +1,0 @@
-/usr/bin/c++ CMakeFiles/test_print.dir/mock_test.cpp.o -o test_print 

@@ -1,8 +1,0 @@
-/home/parallels/shchelokov12/workspace/projects/lab07/_builds/default/CMakeFiles/print.dir
-/home/parallels/shchelokov12/workspace/projects/lab07/_builds/default/CMakeFiles/demo.dir
-/home/parallels/shchelokov12/workspace/projects/lab07/_builds/default/CMakeFiles/edit_cache.dir
-/home/parallels/shchelokov12/workspace/projects/lab07/_builds/default/CMakeFiles/rebuild_cache.dir
-/home/parallels/shchelokov12/workspace/projects/lab07/_builds/default/CMakeFiles/list_install_components.dir
-/home/parallels/shchelokov12/workspace/projects/lab07/_builds/default/CMakeFiles/install.dir
-/home/parallels/shchelokov12/workspace/projects/lab07/_builds/default/CMakeFiles/install/local.dir
-/home/parallels/shchelokov12/workspace/projects/lab07/_builds/default/CMakeFiles/install/strip.dir

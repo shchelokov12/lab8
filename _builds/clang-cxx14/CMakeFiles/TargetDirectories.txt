@@ -1,8 +1,0 @@
-/home/parallels/shchelokov12/workspace/projects/lab07/_builds/clang-cxx14/CMakeFiles/print.dir
-/home/parallels/shchelokov12/workspace/projects/lab07/_builds/clang-cxx14/CMakeFiles/demo.dir
-/home/parallels/shchelokov12/workspace/projects/lab07/_builds/clang-cxx14/CMakeFiles/edit_cache.dir
-/home/parallels/shchelokov12/workspace/projects/lab07/_builds/clang-cxx14/CMakeFiles/rebuild_cache.dir
-/home/parallels/shchelokov12/workspace/projects/lab07/_builds/clang-cxx14/CMakeFiles/list_install_components.dir
-/home/parallels/shchelokov12/workspace/projects/lab07/_builds/clang-cxx14/CMakeFiles/install.dir
-/home/parallels/shchelokov12/workspace/projects/lab07/_builds/clang-cxx14/CMakeFiles/install/local.dir
-/home/parallels/shchelokov12/workspace/projects/lab07/_builds/clang-cxx14/CMakeFiles/install/strip.dir

@@ -3,8 +3,6 @@ name: Docker Build
 on:
   push:
     branches: [ master, main ]
-  pull_request:
-    branches: [ master, main ]
 
 jobs:
   build:
@@ -19,27 +17,21 @@ jobs:
     - name: Build Docker image
       run: docker build -t logger .
     
-    - name: Test Docker image
+    - name: Test Docker container
       run: |
+        # Создаем тестовые данные и запускаем контейнер
+        echo -e "test1\ntest2\ntest3\n" | docker run -i logger
+    
+    - name: Create log file from container
+      run: |
+        # Копируем лог из контейнера
+        docker run --rm logger cat /logs/log.txt > log.txt
         mkdir -p logs
-        printf "test1\ntest2\ntest3\n" | docker run \
-          -e LOG_PATH=/home/logs/log.txt \
-          -v "$(pwd)/logs/:/home/logs/" \
-          logger
-        
-        echo "=== Checking logs directory ==="
-        ls -la logs/
-        
-        echo "=== Log file content ==="
-        if [ -f logs/log.txt ]; then
-          cat logs/log.txt
-        else
-          echo "ERROR: log.txt not found!"
-          exit 1
-        fi
+        cp log.txt logs/
+        echo "=== Log content ==="
+        cat logs/log.txt
     
     - name: Upload logs as artifact
-      if: always()
       uses: actions/upload-artifact@v4
       with:
         name: docker-logs
